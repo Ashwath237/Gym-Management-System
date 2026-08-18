@@ -12,7 +12,7 @@ const pool = new Pool({
 
 app.use(express.json());
 
-app.post("/api/auth/register", (req,res)=>{
+app.post("/api/auth/register", (req, res) => {
     const { username, email, password } = req.body;
     const query = 'INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3)';
     pool.query(query, [username, email, password], (err, result) => {
@@ -22,11 +22,10 @@ app.post("/api/auth/register", (req,res)=>{
         else {
             res.status(201).json({ message: 'User registered successfully', userId: result.rows[0]?.id });
         }
-});
+    });
 });
 
-    
-app.post("/api/auth/login", (req,res)=>{
+app.post("/api/auth/login", (req, res) => {
     const { username, password } = req.body;
     const query = 'SELECT * FROM users WHERE username = $1 AND password_hash = $2';
     pool.query(query, [username, password], (err, result) => {
@@ -38,20 +37,32 @@ app.post("/api/auth/login", (req,res)=>{
         } 
         else {
             res.status(200).json({ message: 'Login successful', user: result.rows[0] });
-    }
-});
+        }
+    });
 });
 
 app.get("/api/classes", (req, res) => {
-  pool.query('SELECT * FROM classes', (err, result) => {
-    if (err) {
-        res.status(400).json({ error: 'Failed to fetch classes' });
-    } 
-    else {
-        res.status(200).json({ classes: result.rows });
-    }
-});
+    pool.query('SELECT * FROM classes', (err, result) => {
+        if (err) {
+            res.status(400).json({ error: 'Failed to fetch classes' });
+        } 
+        else {
+            res.status(200).json({ classes: result.rows });
+        }
+    });
 });
 
+app.post("/api/bookings", (req, res) => {
+    const { member_id, class_id } = req.body;
+    const query = 'INSERT INTO bookings (member_id, class_id, status) VALUES ($1, $2, $3)';
+    pool.query(query, [member_id, class_id, 'confirmed'], (err, result) => {
+        if (err) {
+            res.status(400).json({ error: 'Booking failed' });
+        } 
+        else {
+            res.status(201).json({ message: 'Booking created', bookingId: result.rows[0]?.id });
+        }
+    });
+});
 
-app.listen(3000, ()=>console.log("Server running on port 3000"))
+app.listen(3000, () => console.log("Server running on port 3000"));
