@@ -41,4 +41,17 @@ app.post("/api/auth/login", (req,res)=>{
     }
 });
 });
+
+app.get("/api/classes", (req, res) => {
+  pool.query('SELECT * FROM classes', (err, result) => {
+    if (err) {
+        res.status(400).json({ error: 'Failed to fetch classes' });
+    } 
+    else {
+        res.status(200).json({ classes: result.rows });
+    }
+});
+});
+
+
 app.listen(3000, ()=>console.log("Server running on port 3000"))
