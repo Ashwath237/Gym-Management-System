@@ -20,7 +20,7 @@
         const { username, email, password } = req.body;
         
         // Hash the password
-        const hashedPassword= await bcrypt.hash(password,10);
+        const hashedPassword = await bcrypt.hash(password,10);
 
         const query = 'INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3)';
         
@@ -70,8 +70,27 @@
         });
     });
 
+//session expiration
+    function JwtVerify(req,res,next){
+        if(req.headers.authorization){
+            const token = req.headers.authorization.split(" ")[1];
+            try{
+                const decoded = jwt.verify(token,SECRET_KEY);
+                req.user = decoded;
+                next();
+            }
+            catch(err){
+                res.status(401).json({message:"Invalid Token or Token expired"});
+            }
+        }
+        else{
+            res.status(401).json({ message:"No token provided " });
+        }
+
+    }
+
 //classes block
-    app.get("/api/classes", (req, res) => {
+    app.get("/api/classes", JwtVerify, (req, res) => {
         pool.query('SELECT * FROM classes', (err, result) => {
             if (err) {
                 res.status(400).json({ error: 'Failed to fetch classes' });
@@ -83,7 +102,7 @@
     });
 
 //Bookings Block
-    app.post("/api/bookings", (req, res) => {
+    app.post("/api/bookings", JwtVerify, (req, res) => {
         
         const {  member_id, class_id } = req.body;
         
