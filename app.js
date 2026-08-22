@@ -19,9 +19,21 @@
     app.post("/api/auth/register", async (req, res) => {
         const { username, email, password } = req.body;
         
+        if (!username || username.length <3){
+            return res.status(400).json({ error: 'Username should atleast contain 3 characters ' });
+        }
+
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+            return res.status(400).json({ error: 'Enter Valid Email' })
+        }
+
+        if (!password || password.length < 8 ){
+            return res.status(400).json({ error: 'The Password should at least have 8 Characters' })
+        }
+
         // Hash the password
         const hashedPassword = await bcrypt.hash(password,10);
-
+        
         const query = 'INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3)';
         
         pool.query(query, [username, email, hashedPassword], (err, result) => {
@@ -70,7 +82,7 @@
         });
     });
 
-//session expiration
+//session expiration middleware
     function JwtVerify(req,res,next){
         if(req.headers.authorization){
             const token = req.headers.authorization.split(" ")[1];
