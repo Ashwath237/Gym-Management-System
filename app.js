@@ -130,4 +130,16 @@
         });
     });
 
+    app.get("/api/members", JwtVerify, (req, res) => {
+        pool.query('SELECT * FROM members ', (err, result) => {
+            if(err){
+                res.status(400).json({ error: 'Failed to fetch members' });
+            }
+            else{
+                res.status(200).json({members:result.rows});
+            }
+        });
+    });
+
+
     app.listen(3000, () => console.log("Server running on port 3000"));
