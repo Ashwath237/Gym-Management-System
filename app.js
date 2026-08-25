@@ -1,11 +1,11 @@
-    const express = require('express');
-    const { Pool } = require('pg');
-    const app = express();
-    const bcrypt = require('bcryptjs');
-    const jwt = require('jsonwebtoken');
-    const SECRET_KEY = 'your_secret_key_here';
+const express = require('express');
+const { Pool } = require('pg');
+const app = express();
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const SECRET_KEY = 'your_secret_key_here';
 
-    const pool = new Pool({
+const pool = new Pool({
         user: 'postgres',
         password: 'jotaro',
         host: 'localhost',
@@ -15,30 +15,38 @@
 
     app.use(express.json());
 
-// Register Block
-    app.post("/api/auth/register", async (req, res) => {
+    // Register Block
+    app.post("/api/auth/register", async (req, res, next) => {
         const { username, email, password } = req.body;
         
         if (!username || username.length <3){
-            return res.status(400).json({ error: 'Username should atleast contain 3 characters ' });
+            const error = new Error('Username should at least contain 3 characters');
+            error.status = 400;
+            throw error;
+            
         }
 
         if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
-            return res.status(400).json({ error: 'Enter Valid Email' })
+            const error = new Error('Enter Valid Email');
+            error.status = 400;
+            throw error;
         }
 
         if (!password || password.length < 8 ){
-            return res.status(400).json({ error: 'The Password should at least have 8 Characters' })
+            const error = new Error('Password should have atleast 8 characters');
+            error.status = 400;
+            throw error;
         }
 
         // Hash the password
         const hashedPassword = await bcrypt.hash(password,10);
         
         const query = 'INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3)';
-        
         pool.query(query, [username, email, hashedPassword], (err, result) => {
             if (err) {
-                res.status(400).json({ error: 'Registration failed', details: err.message });
+                const error = new Error('Registration failed');
+                error.status = 400;
+                next (error); 
             } 
             else {
                 res.status(201).json({ message: 'User registered successfully', userId: result.rows[0]?.id });
@@ -47,7 +55,7 @@
     });
 
 // Login Block
-    app.post("/api/auth/login", (req, res) => {
+    app.post("/api/auth/login", (req, res, next) => {
         const { username, password } = req.body;
         
         const query = 'SELECT * FROM users WHERE username = $1';
@@ -58,10 +66,14 @@
             console.log('Query result:', result);
             
             if (err) {
-                res.status(400).json({ error: 'Login failed' });
+                const error = new Error('Login Failed')
+                error.status = 400;
+                next (error);
             } 
             else if (result.rows.length === 0) {
-                res.status(401).json({ error: 'Invalid credentials' });
+                const error = new Error('Invalid credentials')
+                error.status = 400;
+                next (error);
             } 
             else {
                 console.log('Password from request:', req.body.password);
@@ -74,8 +86,14 @@
                     }
                     
                     else {
-                        res.status(401).json({ message: 'Invalid credentials' });
+                        const error = new Error('Invalid Credentials')
+                        error.status = 400;
+                        next (error);
                     }
+                }).catch(err => {
+                    const error = new Error ('Password comparison Failed')
+                    error.status = 500;
+                    next(error);
                 });
             }
         
@@ -86,26 +104,35 @@
     function JwtVerify(req,res,next){
         if(req.headers.authorization){
             const token = req.headers.authorization.split(" ")[1];
-            try{
+            try{    
                 const decoded = jwt.verify(token,SECRET_KEY);
                 req.user = decoded;
                 next();
             }
             catch(err){
-                res.status(401).json({message:"Invalid Token or Token expired"});
+                const error = new Error('Invalid Token or Token expired');
+                error.status = 401;
+                next(error);
             }
         }
         else{
             res.status(401).json({ message:"No token provided " });
         }
-
     }
 
+    function errorMiddleware(err, req, res, next) {
+        console.log("Error:", err.message);
+        console.log("Stack:", err.stack);
+    res.status(err.status || 500).json({ error: err.message });
+}
+
 //classes block
-    app.get("/api/classes", JwtVerify, (req, res) => {
+    app.get("/api/classes", JwtVerify, (req, res, next) => {
         pool.query('SELECT * FROM classes', (err, result) => {
             if (err) {
-                res.status(400).json({ error: 'Failed to fetch classes' });
+                const error = new Error( 'Failed to fetch classes' );
+                error.status = 400;
+                next(error);
             } 
             else {
                 res.status(200).json({ classes: result.rows });
@@ -114,7 +141,7 @@
     });
 
 //Bookings Block
-    app.post("/api/bookings", JwtVerify, (req, res) => {
+    app.post("/api/bookings", JwtVerify, (req, res, next) => {
         
         const {  member_id, class_id } = req.body;
         
@@ -122,7 +149,9 @@
         
         pool.query(query, [member_id, class_id, 'confirmed'], (err, result) => {
             if (err) {
-                res.status(400).json({ error: 'Booking failed' });
+                const error = new Error('Booking failed')
+                error.status = 400;
+                next (error);
             } 
             else {
                 res.status(201).json({ message: 'Booking created', bookingId: result.rows[0]?.id });
@@ -130,16 +159,18 @@
         });
     });
 
-    app.get("/api/members", JwtVerify, (req, res) => {
+    app.get("/api/members", JwtVerify, (req, res, next) => {
         pool.query('SELECT * FROM members ', (err, result) => {
             if(err){
-                res.status(400).json({ error: 'Failed to fetch members' });
+                const error = new Error('Failed to fetch members');
+                error.status = 400;
+                next (error);
             }
             else{
                 res.status(200).json({members:result.rows});
             }
         });
     });
-
+    app.use(errorMiddleware);
 
     app.listen(3000, () => console.log("Server running on port 3000"));
