@@ -172,7 +172,23 @@ const pool = new Pool({
             }
         });
     });
-    
+
+    app.post("/api/members", JwtVerify, (req, res, next)=>{
+        const query = `INSERT INTO members (user_id, age, fitness_level) VALUES ($1, $2, $3)`;
+        const {user_id, age, fitness_level } = req.body;
+        pool.query(query, [user_id, age, fitness_level], (err, result) => {
+            if (err){
+                const error = new Error('Failed to create new member');
+                error.status = 402;
+                return next (error);
+            }
+            else {
+                res.status(200).json({message: 'Member created successfully'});
+            }
+    });
+});
+
+
 //Member id block
     app.get("/api/members/:id", JwtVerify, (req,res,next)=>{
         const {id} = req.params
