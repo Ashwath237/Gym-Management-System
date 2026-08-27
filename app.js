@@ -171,6 +171,31 @@ const pool = new Pool({
             }
         });
     });
+    
+    //member id block
+    app.get("/api/members/:id", JwtVerify, (req,res,next)=>{
+        const {id} = req.params
+        const query  = `SELECT m.id, m.age, m.fitness_level, m.registration_date, u.username, u.email
+                        FROM members m
+                        JOIN users u ON m.user_id = u.id
+                        WHERE m.id = $1`;
+        
+        pool.query(query, [id],(err,result)=>{
+            if (err){
+                const error = new Error('Failed to fetch member');
+                error.status = 500;
+                next(error);
+            }
+            if(result.rows.length === 0){
+                const error= new Error('Member not found');
+                error.status = 404;
+                return next(error);
+            }
+            res.json(result.rows[0]);
+        })
+    });
+    
+    
     app.use(errorMiddleware);
 
     app.listen(3000, () => console.log("Server running on port 3000"));
