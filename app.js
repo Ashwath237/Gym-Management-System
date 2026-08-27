@@ -195,7 +195,21 @@ const pool = new Pool({
         })
     });
     
-    
+    app.put('/api/members/:id', JwtVerify, (req, res, next) => {
+        const { age, fitness_level } = req.body
+        const query  = `UPDATE members SET age = $1, fitness_level = $2 WHERE id = $3`;
+        const { id } = req.params
+
+        pool.query(query, [age, fitness_level, id],(err,result)=>{
+            if (err){
+                const error = new Error('Failed to fetch age, fitness level');
+                error.status = 500;
+                return next(error);
+            }
+            res.json({ message: 'Member updated successfully' });
+        })
+    });
+
     app.use(errorMiddleware);
 
     app.listen(3000, () => console.log("Server running on port 3000"));
