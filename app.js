@@ -159,6 +159,7 @@ const pool = new Pool({
         });
     });
 
+//Members Block
     app.get("/api/members", JwtVerify, (req, res, next) => {
         pool.query('SELECT * FROM members ', (err, result) => {
             if(err){
@@ -172,7 +173,7 @@ const pool = new Pool({
         });
     });
     
-    //member id block
+//Member id block
     app.get("/api/members/:id", JwtVerify, (req,res,next)=>{
         const {id} = req.params
         const query  = `SELECT m.id, m.age, m.fitness_level, m.registration_date, u.username, u.email
@@ -195,11 +196,12 @@ const pool = new Pool({
         })
     });
     
+//Member Update Block
     app.put('/api/members/:id', JwtVerify, (req, res, next) => {
-        const { age, fitness_level } = req.body
+        const { age, fitness_level } = req.body;
         const query  = `UPDATE members SET age = $1, fitness_level = $2 WHERE id = $3`;
-        const { id } = req.params
-
+        const { id } = req.params;
+        
         pool.query(query, [age, fitness_level, id],(err,result)=>{
             if (err){
                 const error = new Error('Failed to fetch age, fitness level');
@@ -207,6 +209,21 @@ const pool = new Pool({
                 return next(error);
             }
             res.json({ message: 'Member updated successfully' });
+        })
+    });
+
+//Member Delete Block
+        app.delete('/api/members/:id', JwtVerify, (req, res, next) => {
+        const { id } = req.params;
+        const query  = `DELETE FROM members WHERE id = $1`;
+        
+        pool.query(query, [id],(err,result)=>{
+            if (err){
+                const error = new Error('Failed to Delete the User');
+                error.status = 500;
+                return next(error);
+            }
+            res.json({ message: 'Member removed successfully' });
         })
     });
 
