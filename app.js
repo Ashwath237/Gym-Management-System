@@ -38,7 +38,7 @@ const pool = new Pool({
             throw error;
         }
 
-        // Hash the password
+// Hash the password
         const hashedPassword = await bcrypt.hash(password,10);
         
         const query = 'INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3)';
@@ -126,7 +126,7 @@ const pool = new Pool({
     res.status(err.status || 500).json({ error: err.message });
 }
 
-//classes block
+    //classes block
     app.get("/api/classes", JwtVerify, (req, res, next) => {
         pool.query('SELECT * FROM classes', (err, result) => {
             if (err) {
@@ -139,6 +139,76 @@ const pool = new Pool({
             }
         });
     });
+
+//Classes id Block
+    app.get("/api/classes/:id", JwtVerify, (req,res,next)=>{
+        const {id} = req.params
+        const query  = `SELECT * FROM classes WHERE id = $1 `;
+        pool.query(query, [id],(err,result)=>{
+            if (err){
+                const error = new Error('Failed to fetch Classes ');
+                error.status = 500;
+                next(error);
+            }
+            
+            if(result.rows.length === 0){
+                const error= new Error('Class not found');
+                error.status = 404;
+                return next(error);
+            }
+            
+            res.json(result.rows[0]);
+        })
+    });
+
+//Update Classes block
+    app.put('/api/classes/:id', JwtVerify, (req, res, next) => {
+        const { name, trainer_id, time, capacity, difficulty_level } = req.body;
+        const query  = `UPDATE classes SET name = $1, trainer_id = $2, time = $3, capacity = $4, difficulty_level= $5 WHERE id = $6 `;
+        const { id } = req.params;
+        
+        pool.query(query, [ name, trainer_id, time, capacity, difficulty_level, id],(err,result)=>{
+            if (err){
+                const error = new Error('Failed to name, trainer_id, time, capacity, difficulty_level');
+                error.status = 500;
+                return next(error);
+            }
+            res.json({ message: 'Classes updated successfully' });
+        })
+    });
+
+//Create New classes
+    app.post("/api/classes", JwtVerify, (req, res, next)=>{
+    const query = `INSERT INTO classes ( name, trainer_id, time, capacity, difficulty_level ) VALUES ($1, $2, $3, $4, $5)`;
+    const { name, trainer_id, time, capacity, difficulty_level } = req.body;
+        
+        pool.query(query, [ name ,trainer_id, time, capacity, difficulty_level], (err, result) => {
+            if (err){
+                const error = new Error('Failed to create new Class');
+                error.status = 402;
+                return next (error);
+            }
+            else {
+                res.status(200).json({message: 'Class created successfully'});
+            }
+    });
+});
+
+//Delete Class
+    app.delete('/api/classes/:id', JwtVerify, (req, res, next) => {
+        const { id } = req.params;
+        const query  = `DELETE FROM classes WHERE id = $1`;
+        
+        pool.query(query, [id],(err,result)=>{
+            if (err){
+                const error = new Error('Failed to Delete the Class');
+                error.status = 500;
+                return next(error);
+            }
+            res.json({ message: 'Class removed successfully' });
+        })
+    });
+
 
 //Bookings Block
     app.post("/api/bookings", JwtVerify, (req, res, next) => {
