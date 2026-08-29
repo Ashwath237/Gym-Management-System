@@ -211,13 +211,27 @@ const pool = new Pool({
 
 
 //Bookings Block
+    app.get("/api/bookings", JwtVerify, (req, res, next) => {
+        pool.query('SELECT * FROM bookings', (err, result) => {
+            if (err) {
+                const error = new Error( 'Failed to fetch Bookings' );
+                error.status = 400;
+                next(error);
+            } 
+            else {
+                res.status(200).json({ bookings: result.rows });
+            }
+        });
+    });
+
+//New Bookings Block
     app.post("/api/bookings", JwtVerify, (req, res, next) => {
         
-        const {  member_id, class_id } = req.body;
+        const {  member_id, class_id, booked_date} = req.body;
         
-        const query = 'INSERT INTO bookings (member_id, class_id, status) VALUES ($1, $2, $3)';
+        const query = 'INSERT INTO bookings (member_id, class_id, booked_date, status) VALUES ($1, $2, $3, $4)';
         
-        pool.query(query, [member_id, class_id, 'confirmed'], (err, result) => {
+        pool.query(query, [member_id, class_id, booked_date, 'confirmed'], (err, result) => {
             if (err) {
                 const error = new Error('Booking failed')
                 error.status = 400;
@@ -228,6 +242,60 @@ const pool = new Pool({
             }
         });
     });
+
+//Bookings id Block
+    app.get("/api/bookings/:id", JwtVerify, (req,res,next)=>{
+        const {id} = req.params
+        const query  = `SELECT * FROM bookings WHERE id = $1 `;
+        pool.query(query, [id],(err,result)=>{
+            if (err){
+                const error = new Error('Failed to fetch bookings info');
+                error.status = 500;
+                next(error);
+            }
+            
+            if(result.rows.length === 0){
+                const error= new Error('Bookings not found');
+                error.status = 404;
+                return next(error);
+            }
+            
+            res.json(result.rows[0]);
+        })
+    });
+
+//Update Bookings
+    app.put('/api/bookings/:id', JwtVerify, (req, res, next) => {
+        const { member_id, class_id, booked_date } = req.body;
+        const query  = `UPDATE bookings SET member_id = $1, class_id = $2, booked_date = $3 WHERE id = $4`;
+        const { id } = req.params;
+        
+        pool.query(query, [member_id, class_id, booked_date, id],(err,result)=>{
+            if (err){
+                const error = new Error('Failed to fetch member_id, class_id, booked_date');
+                error.status = 500;
+                return next(error);
+            }
+            res.json({ message: 'Bookings updated successfully' });
+        })
+    });
+
+//Delete Bookings
+    app.delete('/api/bookings/:id', JwtVerify, (req, res, next) => {
+        const { id } = req.params;
+        const query  = `DELETE FROM bookings WHERE id = $1`;
+        
+        pool.query(query, [id],(err,result)=>{
+            if (err){
+                const error = new Error('Failed to Delete the booking');
+                error.status = 500;
+                return next(error);
+            }
+            res.json({ message: 'Bookings removed successfully' });
+        })
+    });
+
+
 
 //Members Block
     app.get("/api/members", JwtVerify, (req, res, next) => {
@@ -397,6 +465,91 @@ const pool = new Pool({
                 return next(error);
             }
             res.json({ message: 'Trainer removed successfully' });
+        })
+    });
+
+//Attendance Block
+    app.get("/api/attendance", JwtVerify, (req, res, next) => {
+        pool.query('SELECT * FROM attendance', (err, result) => {
+            if (err) {
+                const error = new Error( 'Failed to fetch attendance' );
+                error.status = 400;
+                next(error);
+            } 
+            else {
+                res.status(200).json({ attendance: result.rows });
+            }
+        });
+    });
+
+//New attendance Block
+    app.post("/api/attendance", JwtVerify, (req, res, next) => {
+        
+        const {  member_id, class_id, attended_date, check_in_time} = req.body;
+        
+        const query = 'INSERT INTO attendance (member_id, class_id, attended_date, check_in_time) VALUES ($1, $2, $3, $4)';
+        
+        pool.query(query, [member_id, class_id, attended_date, check_in_time], (err, result) => {
+            if (err) {
+                const error = new Error('Attendance failed')
+                error.status = 400;
+                next (error);
+            } 
+            else {
+                res.status(200).json({message: 'Attendance created successfully'});
+            }
+        });
+    });
+
+//Attendance id Block
+    app.get("/api/attendance/:id", JwtVerify, (req,res,next)=>{
+        const {id} = req.params
+        const query  = `SELECT * FROM attendance WHERE id = $1 `;
+        pool.query(query, [id],(err,result)=>{
+            if (err){
+                const error = new Error('Failed to fetch attendance info');
+                error.status = 500;
+                next(error);
+            }
+            
+            if(result.rows.length === 0){
+                const error= new Error('Attendance not found');
+                error.status = 404;
+                return next(error);
+            }
+            
+            res.json(result.rows[0]);
+        })
+    });
+
+//Update attendance
+    app.put('/api/attendance/:id', JwtVerify, (req, res, next) => {
+        const { member_id, class_id, attended_date, check_in_time } = req.body;
+        const query  = `UPDATE attendance SET member_id = $1, class_id = $2, attended_date = $3, check_in_time = $4 WHERE id = $5`;
+        const { id } = req.params;
+        
+        pool.query(query, [member_id, class_id, attended_date, check_in_time, id],(err,result)=>{
+            if (err){
+                const error = new Error('Failed to fetch member_id, class_id, attended_date, check_in_time');
+                error.status = 500;
+                return next(error);
+            }
+            res.json({ message: 'Attendance updated successfully' });
+        })
+    });
+
+//Delete attendance
+    app.delete('/api/attendance/:id', JwtVerify, (req, res, next) => {
+        const { id } = req.params;
+        const query  = `DELETE FROM attendance WHERE id = $1`;
+        
+        pool.query(query, [id],(err,result)=>{
+            if (err){
+                const error = new Error('Failed to Delete the attendance');
+                error.status = 500;
+                return next(error);
+            }
+            res.json({ message: 'attendance removed successfully' });
         })
     });
 
