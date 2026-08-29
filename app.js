@@ -173,6 +173,7 @@ const pool = new Pool({
         });
     });
 
+//Create new members
     app.post("/api/members", JwtVerify, (req, res, next)=>{
         const query = `INSERT INTO members (user_id, age, fitness_level) VALUES ($1, $2, $3)`;
         const {user_id, age, fitness_level } = req.body;
@@ -229,7 +230,7 @@ const pool = new Pool({
     });
 
 //Member Delete Block
-        app.delete('/api/members/:id', JwtVerify, (req, res, next) => {
+    app.delete('/api/members/:id', JwtVerify, (req, res, next) => {
         const { id } = req.params;
         const query  = `DELETE FROM members WHERE id = $1`;
         
@@ -242,6 +243,93 @@ const pool = new Pool({
             res.json({ message: 'Member removed successfully' });
         })
     });
+
+
+//Trainers block
+
+    app.get('/api/trainers', JwtVerify, (req,res,next)=>{
+        const query = 'SELECT * FROM trainers';
+        
+        pool.query(query,(err,result)=>{
+            if (err){
+            const error = new Error('Failed to fetch trainers');
+            error.status = 500;
+            return next (error);
+        }
+        
+        res.json({trainers: result.rows})
+    });
+    });
+
+//Trainers id Block
+    app.get("/api/trainers/:id", JwtVerify, (req,res,next)=>{
+        const {id} = req.params
+        const query  = `SELECT * FROM trainers WHERE id = $1 `;
+        pool.query(query, [id],(err,result)=>{
+            if (err){
+                const error = new Error('Failed to fetch Trainers info');
+                error.status = 500;
+                next(error);
+            }
+            
+            if(result.rows.length === 0){
+                const error= new Error('Trainer not found');
+                error.status = 404;
+                return next(error);
+            }
+            
+            res.json(result.rows[0]);
+        })
+    });
+
+//Create New Trainers
+    app.post("/api/trainers", JwtVerify, (req, res, next)=>{
+        const query = `INSERT INTO trainers ( name, specialization, availability ) VALUES ($1, $2, $3)`;
+        const { name, specialization, availability } = req.body;
+        
+        pool.query(query, [ name, specialization, availability], (err, result) => {
+            if (err){
+                const error = new Error('Failed to create new trainers');
+                error.status = 402;
+                return next (error);
+            }
+            else {
+                res.status(200).json({message: 'trainers created successfully'});
+            }
+    });
+});
+
+//Update Trainer
+    app.put('/api/trainers/:id', JwtVerify, (req, res, next) => {
+        const { name, specialization, availability } = req.body;
+        const query  = `UPDATE trainers SET name = $1, specialization = $2, availability = $3 WHERE id = $4`;
+        const { id } = req.params;
+        
+        pool.query(query, [name, specialization, availability, id],(err,result)=>{
+            if (err){
+                const error = new Error('Failed to fetch name, specialization, availability');
+                error.status = 500;
+                return next(error);
+            }
+            res.json({ message: 'Trainer updated successfully' });
+        })
+    });
+
+//Delete Trainer
+    app.delete('/api/trainers/:id', JwtVerify, (req, res, next) => {
+        const { id } = req.params;
+        const query  = `DELETE FROM trainers WHERE id = $1`;
+        
+        pool.query(query, [id],(err,result)=>{
+            if (err){
+                const error = new Error('Failed to Delete the trainer');
+                error.status = 500;
+                return next(error);
+            }
+            res.json({ message: 'Trainer removed successfully' });
+        })
+    });
+
 
     app.use(errorMiddleware);
 
