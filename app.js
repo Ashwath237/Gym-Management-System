@@ -1,17 +1,18 @@
+require('dotenv').config();
 const express = require('express');
 const { Pool } = require('pg');
 const app = express();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const SECRET_KEY = 'your_secret_key_here';
+const SECRET_KEY = process.env.SECRET_KEY;
 
 const pool = new Pool({
-        user: 'postgres',
-        password: 'jotaro',
-        host: 'localhost',
-        port: 5432,
-        database: 'gym_management'
-    });
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT,
+    database: process.env.DB_NAME
+});
 
     app.use(express.json());
 
