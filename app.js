@@ -7,7 +7,7 @@ const jwt = require('jsonwebtoken');
 const SECRET_KEY = process.env.SECRET_KEY;
 
 const pool = new Pool({
-connectionString: process.env.DATABASE_URL
+    connectionString: process.env.DATABASE_URL
 });
 
     app.use(express.json());
@@ -15,41 +15,40 @@ connectionString: process.env.DATABASE_URL
     // Register Block
     app.post("/api/auth/register", async (req, res, next) => {
         const { username, email, password } = req.body;
-        
-        if (!username || username.length <3){
-            const error = new Error('Username should at least contain 3 characters');
-            error.status = 400;
-            throw error;
-            
-        }
+    
+    if (!username || username.length < 3){
+        const error = new Error('Username should at least contain 3 characters');
+        error.status = 400;
+        throw error;
+    }
 
-        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
-            const error = new Error('Enter Valid Email');
-            error.status = 400;
-            throw error;
-        }
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+        const error = new Error('Enter Valid Email');
+        error.status = 400;
+        throw error;
+    }
 
-        if (!password || password.length < 8 ){
-            const error = new Error('Password should have atleast 8 characters');
-            error.status = 400;
-            throw error;
-        }
+    if (!password || password.length < 8 ){
+        const error = new Error('Password should have atleast 8 characters');
+        error.status = 400;
+        throw error;
+    }
 
-// Hash the password
-        const hashedPassword = await bcrypt.hash(password,10);
-        
-        const query = 'INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3)';
-        pool.query(query, [username, email, hashedPassword], (err, result) => {
-            if (err) {
-                const error = new Error('Registration failed');
-                error.status = 400;
-                next (error); 
-            } 
-            else {
-                res.status(201).json({ message: 'User registered successfully', userId: result.rows[0]?.id });
-            }
-        });
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const query = 'INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3)';
+    
+    pool.query(query, [username, email, hashedPassword], (err, result) => {
+        if (err) {
+            console.log('Registration DB Error:', err.message);
+            const error = new Error('Registration failed: ' + err.message);
+            error.status = 400;
+            return next(error); 
+        } 
+        else {
+            res.status(201).json({ message: 'User registered successfully', userId: result.rows[0]?.id });
+        }
     });
+});
 
 // Login Block
     app.post("/api/auth/login", (req, res, next) => {
