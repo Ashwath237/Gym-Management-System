@@ -4,14 +4,26 @@ const { Pool } = require('pg');
 const app = express();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const cors = require('cors');
 const SECRET_KEY = process.env.SECRET_KEY;
+app.use(cors());
 
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT,
+    database: process.env.DB_NAME
 });
-
     app.use(express.json());
 
+
+    app.use((req, res, next) => {
+        res.header('Access-Control-Allow-Origin', '*');
+        res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+        res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+        next();
+});
     // Register Block
     app.post("/api/auth/register", async (req, res, next) => {
         const { username, email, password } = req.body;
@@ -552,4 +564,4 @@ const pool = new Pool({
 
     app.use(errorMiddleware);
 
-    app.listen(3000, () => console.log("Server running on port 3000"));
+    app.listen(3001, () => console.log("Server running on port 3001"));
